@@ -13,6 +13,8 @@ var (
 	LEADER = os.Getenv("LEADER") == "1"
 
 	ENCRYPTION_KEY = GetEnvOrFail("ENCRYPTION_KEY")
+
+	DSN = GetEnvOrFail("DSN")
 )
 
 func GetEnvOrDefault(env, defaultVal string) string {

@@ -5,4 +5,7 @@ version: '3'
 tasks:
   default:
     cmds:
+      - GOMAXPROCS=1 go run .
+  sqlc:
+    cmds:
       - sqlc generate
