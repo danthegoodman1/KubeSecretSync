@@ -126,7 +126,7 @@ func upsertSecret(ctx context.Context, secret corev1.Secret, secretHash [32]byte
 
 	jsonManifest, err := json.Marshal(&secret)
 	if err != nil {
-		logger.Error("Error marshaling secret %s/%s to json", secret.Namespace, secret.Name)
+		logger.Errorf("Error marshaling secret %s/%s to json", secret.Namespace, secret.Name)
 		return err
 	}
 
@@ -141,7 +141,7 @@ func upsertSecret(ctx context.Context, secret corev1.Secret, secretHash [32]byte
 		ManifestHash: hex.EncodeToString(secretHash[:]),
 	})
 	if err != nil {
-		logger.Error("Error upserting secret %s/%s", secret.Namespace, secret.Name)
+		logger.Errorf("Error upserting secret %s/%s", secret.Namespace, secret.Name)
 		return err
 	}
 
