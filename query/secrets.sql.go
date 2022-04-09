@@ -35,6 +35,38 @@ func (q *Queries) GetSecret(ctx context.Context, arg GetSecretParams) (KssSecret
 	return i, err
 }
 
+const listAllSecrets = `-- name: ListAllSecrets :many
+SELECT ns, secret_name, manifest, created_at, updated_at, manifest_hash
+FROM kss_secrets
+`
+
+func (q *Queries) ListAllSecrets(ctx context.Context) ([]KssSecret, error) {
+	rows, err := q.db.Query(ctx, listAllSecrets)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []KssSecret
+	for rows.Next() {
+		var i KssSecret
+		if err := rows.Scan(
+			&i.Ns,
+			&i.SecretName,
+			&i.Manifest,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ManifestHash,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const upsertSecret = `-- name: UpsertSecret :execrows
 INSERT INTO kss_secrets (ns, secret_name, manifest, manifest_hash)
 VALUES ($1, $2, $3, $4)

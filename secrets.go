@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/danthegoodman1/KubeSecretSync/db"
@@ -69,6 +70,11 @@ func tickLeader(ctx context.Context) error {
 		return err
 	}
 
+	if len(secrets.Items) == 0 {
+		logger.Debug("No secrets found to sync, exiting")
+		return nil
+	}
+
 	for _, secret := range secrets.Items {
 		logger.Debugf("Got secret %s/%s\n", secret.Namespace, secret.Name)
 		// Get hash with original data, since nonce will change the encrypted results between runs
@@ -99,12 +105,6 @@ func tickLeader(ctx context.Context) error {
 			logger.Errorf("Error upserting secret %s/%s", secret.Namespace, secret.Name)
 			return err
 		}
-
-		// rows, err := query.New(conn).UpsertSecret(ctx, query.UpsertSecretParams{
-		// 	Ns: secret.Namespace,
-		// 	SecretName: secret.Name,
-		// 	Manifest: ,
-		// })
 	}
 
 	return nil
@@ -142,6 +142,80 @@ func upsertSecret(ctx context.Context, secret corev1.Secret, secretHash [32]byte
 	}
 
 	logger.Debugf("Upsert secret %s/%s affected %d rows in %s", secret.Namespace, secret.Name, rows, time.Since(s))
+
+	return nil
+}
+
+func tickFollower(ctx context.Context) error {
+	logger.Debug("Ticking as follower...")
+
+	// Get all secrets in DB
+	s := time.Now()
+	conn, err := db.PGPool.Acquire(ctx)
+	if err != nil {
+		logger.Error("Error acquiring pool connection")
+		return err
+	}
+	defer conn.Release()
+
+	secrets, err := query.New(conn).ListAllSecrets(ctx)
+	if err != nil {
+		logger.Error("Error listing all secrets")
+		return err
+	}
+	logger.Debugf("Listed %d secrets in %s", len(secrets), time.Since(s))
+
+	// Compare all DB secrets to local
+	for _, secret := range secrets {
+		logger.Debugf("Checking if secret %s/%s exists", secret.Ns, secret.SecretName)
+		foundSecret, err := k8sClientSet.CoreV1().Secrets(secret.Ns).Get(ctx, secret.SecretName, v1.GetOptions{})
+		if err != nil {
+			if strings.HasSuffix(err.Error(), " not found") {
+				// Secret not found, create it
+				logger.Infof("New secret %s/%s found! Creating...", secret.Ns, secret.SecretName)
+
+				// Bind to secret object
+				var newSecret corev1.Secret
+				err := secret.Manifest.AssignTo(&newSecret)
+				if err != nil {
+					logger.Error("Error assigning secret manifest")
+					return err
+				}
+
+				// Decrypt data
+				for key, cipherText := range newSecret.Data {
+					logger.Debugf("Decrypting secret %s/%s with key %s", secret.Ns, secret.SecretName, key)
+					plainText, err := decryptBytes(cipherText, utils.ENCRYPTION_KEY)
+					if err != nil {
+						logger.Errorf("Error decrypting data with key %s", key)
+						return err
+					}
+
+					// Replace with cipher text
+					newSecret.Data[key] = plainText
+				}
+
+				// Need to drop the resource version
+				newSecret.ResourceVersion = ""
+
+				// Create the secret
+				_, err = k8sClientSet.CoreV1().Secrets(secret.Ns).Create(ctx, &newSecret, v1.CreateOptions{})
+				if err != nil {
+					logger.Errorf("Error creating secret %s/%s", secret.Ns, secret.SecretName)
+					return err
+				}
+
+				continue
+			} else {
+				logger.Error("Error getting secret from k8s api")
+				return err
+			}
+		}
+		foundSecret = foundSecret
+		// If not exists, create secret
+
+		// If exists and updated time is different than annotation, update
+	}
 
 	return nil
 }

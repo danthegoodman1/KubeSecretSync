@@ -13,3 +13,7 @@ SELECT *
 FROM kss_secrets
 WHERE ns = $1
 AND secret_name = $2;
+
+-- name: ListAllSecrets :many
+SELECT *
+FROM kss_secrets;

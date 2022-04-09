@@ -26,14 +26,19 @@ func main() {
 		logger.Fatalf("Error connecting to k8s client: %s", err)
 	}
 
-	stopChan := make(chan struct{})
+	// stopChan := make(chan struct{})
 
 	if utils.LEADER {
 		logger.Info("Running as Leader")
-		startLoop(tickLeader, stopChan)
+		err = tickLeader(context.Background())
+		// startLoop(tickLeader, stopChan)
 	} else {
 		logger.Info("Running as Follower")
-		startLoop(tickLeader, stopChan) // TODO: Change to follower
+		err = tickFollower(context.Background())
+		// startLoop(tickFollower, stopChan)
+	}
+	if err != nil {
+		logger.Fatal(err)
 	}
 }
 
