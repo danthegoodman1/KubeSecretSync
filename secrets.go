@@ -110,7 +110,7 @@ func tickLeader(ctx context.Context) error {
 }
 
 func upsertSecret(ctx context.Context, secret corev1.Secret, secretHash [32]byte) error {
-	logger.Debugf("Upserting secret %s/%s", secret.Namespace, secret.Name)
+	logger.Debugf("Upserting secret %s/%s...", secret.Namespace, secret.Name)
 	conn, err := db.PGPool.Acquire(ctx)
 	if err != nil {
 		logger.Error("Error acquiring pool connection")
@@ -139,7 +139,7 @@ func upsertSecret(ctx context.Context, secret corev1.Secret, secretHash [32]byte
 		return err
 	}
 
-	logger.Debugf("Upserting secret %s/%s affected %d rows", secret.Namespace, secret.Name, rows)
+	logger.Debugf("Upsert secret %s/%s affected %d rows", secret.Namespace, secret.Name, rows)
 
 	return nil
 }
