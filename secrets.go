@@ -75,7 +75,7 @@ func tickLeader(ctx context.Context) error {
 	}
 
 	if len(secrets.Items) == 0 {
-		logger.Debug("No secrets found to sync, exiting")
+		logger.Debug("No secrets found to sync")
 		return nil
 	}
 
@@ -248,6 +248,12 @@ func createNewSecret(ctx context.Context, secret query.KssSecret) error {
 		logger.Errorf("Error preparing decrypted secret %s/%s", secret.Ns, secret.SecretName)
 		return err
 	}
+
+	if newSecret.Annotations == nil {
+		newSecret.Annotations = map[string]string{}
+	}
+
+	newSecret.Annotations[LastUpdatedAnnotation] = secret.UpdatedAt.UTC().Format(time.RFC3339)
 
 	// Create the secret
 	_, err = k8sClientSet.CoreV1().Secrets(secret.Ns).Create(ctx, &newSecret, v1.CreateOptions{})
