@@ -1,6 +1,13 @@
 # KubeSecretSync
 
-Syncing kubernetes secrets across clusters scalably and securely.
+#### Syncing kubernetes secrets across clusters scalably and securely.
+#### Multi-Cloud & Multi-Region
+
+Sync secrets between kubernetes in any region, from any provider.
+
+Unlock true multi-cluster services without complex networking and global load balancers. See [Lets Encrypt Cert Sharing](#lets-encrypt-cert-sharing) for more.
+
+![diagram](./img/KubeSecretSync_Diagram.png)
 
 ### Database and SQL
 
@@ -42,7 +49,27 @@ If set to `1`, will print debug logs.
 
 If set to `1`, will format with standard logrus format.
 
-## Usage With Cert-manager to Sync Certs Across Clusters
+## Lets Encrypt Cert Sharing
+
+You can use KubeSecretSync to share Cert-Manager certificates with multiple clusters.
+
+If you want to make your service highly available and support multiple regions, but you manage your own certificates, this can be very difficult.
+
+Or if you offer a white label service like website hosting that allows customers to setup their own domains, and you serve content based on what domain a request comes from.
+
+Typically you might have to use something like Cloudflare SSL for SaaS, however at $2/month per certificate this can become prohibitively expensive, as well as locking you in to Cloudflare, with their uptime being your uptime.
+
+Let's Encrypt offers free certificates, and allows you to manage them yourself with Cert-Manager.
+
+Multi-Region has been shut off due to the HTTP challenge needing to hit the same host every time.
+
+With KubeSecretSync you can configure a Kubernetes Service and Endpoint on your Follower clusters to forward all `/.well-known/acme` prefixed routes to the Leader. This allows the Leader to manage all certificate provisioning, and syncing the certificate with the Follower clusters.
+
+You can now modify the Ingress resource on all clusters to include the new domain and certificate.
+
+Simply connected these clusters by having your DNS record point to all cluster load balancers, and now you have Multi-Region global load balancing with shared certificates, self-managed, free from vendor lock-in.
+
+You are no longer dependent on a cloud provider, region, or proxy like Cloudflare being up for you to maintain your uptime.
 
 ### Labeling Cert Secrets
 
