@@ -9,9 +9,10 @@ import (
 )
 
 type KssSecret struct {
-	Ns         string
-	SecretName string
-	Manifest   pgtype.JSON
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	Ns           string
+	SecretName   string
+	Manifest     pgtype.JSON
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	ManifestHash string
 }

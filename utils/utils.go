@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"fmt"
 	"os"
+	"strconv"
 
 	formattedlogger "github.com/danthegoodman1/KubeSecretSync/formatted_logger"
 )
@@ -15,6 +15,8 @@ var (
 	ENCRYPTION_KEY = GetEnvOrFail("ENCRYPTION_KEY")
 
 	DSN = GetEnvOrFail("DSN")
+
+	TICK_SECONDS = GetEnvOrDefaultInt("TICK_SECONDS", 10)
 )
 
 func GetEnvOrDefault(env, defaultVal string) string {
@@ -29,10 +31,23 @@ func GetEnvOrDefault(env, defaultVal string) string {
 func GetEnvOrFail(env string) string {
 	e := os.Getenv(env)
 	if e == "" {
-		logger.Error(fmt.Sprintf("Failed to find env var '%s'", env))
-		os.Exit(1)
+		logger.Fatalf("Failed to find env var '%s'", env)
 		return ""
 	} else {
 		return e
+	}
+}
+
+func GetEnvOrDefaultInt(env string, defaultVal int) int {
+	e := os.Getenv(env)
+	if e == "" {
+		return defaultVal
+	} else {
+		// Try to cast to int
+		result, err := strconv.Atoi(e)
+		if err != nil {
+			logger.Fatalf("Failed to parse %s to int of value %s: %s", env, e, err.Error())
+		}
+		return result
 	}
 }

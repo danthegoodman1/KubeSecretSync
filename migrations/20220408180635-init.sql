@@ -7,9 +7,10 @@ CREATE TABLE IF NOT EXISTS kss_secrets (
   manifest JSON NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  manifest_hash TEXT NOT NULL,
   PRIMARY KEY(ns, secret_name)
 );
 
 -- +migrate Down
 
-DROP TABLE IF EXISTS kss_secrets
+DROP TABLE IF EXISTS kss_secrets;
