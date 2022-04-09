@@ -58,7 +58,7 @@ func initK8sClient() (err error) {
 
 // Queries k8s API for secrets
 func tickLeader(ctx context.Context) error {
-	logger.Debug("Ticking...")
+	logger.Debug("Ticking as leader...")
 	// "" namespace lists all namespaces
 	secrets, err := k8sClientSet.CoreV1().Secrets("").List(ctx, v1.ListOptions{
 		LabelSelector: "kube-secret-sync=true",
