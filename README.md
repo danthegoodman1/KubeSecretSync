@@ -20,11 +20,23 @@ Env vars are used to configure.
 
 This is the DSN of the database, either CockroachDB or Postgres.
 
+### `ENCRYPTION_KEY`
+
+The key used for encryption and decryption of secrets to and from the DB. Must be the same for leaders and followers.
+
 ### `LEADER`
 
 If set to `1`, then this indicates that the node is the leader and should act as a writer to the DB.
 
 If not set to `1` then it will follow the state of the DB, adding annotations to the secrets based on the last update time from the DB.
+
+### `DEBUG`
+
+If set to `1`, will print debug logs.
+
+### `PRETTY`
+
+If set to `1`, will format with standard logrus format.
 
 ## Usage With Cert-manager to Sync Certs Across Clusters
 

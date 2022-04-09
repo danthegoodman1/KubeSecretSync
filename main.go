@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/danthegoodman1/KubeSecretSync/db"
@@ -26,16 +27,14 @@ func main() {
 		logger.Fatalf("Error connecting to k8s client: %s", err)
 	}
 
-	// stopChan := make(chan struct{})
+	stopChan := make(chan struct{})
 
 	if utils.LEADER {
 		logger.Info("Running as Leader")
-		err = tickLeader(context.Background())
-		// startLoop(tickLeader, stopChan)
+		startLoop(tickLeader, stopChan)
 	} else {
 		logger.Info("Running as Follower")
-		err = tickFollower(context.Background())
-		// startLoop(tickFollower, stopChan)
+		startLoop(tickFollower, stopChan)
 	}
 	if err != nil {
 		logger.Fatal(err)
@@ -43,8 +42,20 @@ func main() {
 }
 
 func startLoop(tickFunc func(ctx context.Context) error, stopChan chan struct{}) (returnChan chan struct{}) {
-	ticker := time.NewTicker(time.Second * time.Duration(utils.TICK_SECONDS))
 	ctx, cancel := context.WithCancel(context.Background())
+
+	if os.Getenv("LOCAL") == "1" {
+		// Just run and exit
+		logger.Warn("Running locally, triggering tick once then exiting")
+		err := tickFunc(ctx)
+		if err != nil {
+			logger.Error(err)
+		}
+		cancel()
+		return make(chan struct{})
+	}
+
+	ticker := time.NewTicker(time.Second * time.Duration(utils.TICK_SECONDS))
 
 	for {
 		select {
