@@ -16,7 +16,7 @@ var (
 
 	DSN = GetEnvOrFail("DSN")
 
-	TICK_SECONDS = GetEnvOrDefaultInt("TICK_SECONDS", 10)
+	TICK_SECONDS = GetEnvOrDefaultInt("TICK_SECONDS", 20)
 )
 
 func GetEnvOrDefault(env, defaultVal string) string {

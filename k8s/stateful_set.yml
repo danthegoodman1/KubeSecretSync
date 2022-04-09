@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kubesecretsync
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: kubesecretsync # has to match .spec.template.metadata.labels
+  serviceName: "kubesecretsync"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kubesecretsync # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      serviceAccountName: kubesecretsync
+      containers:
+      - name:  kybesecretsync
+        image:  ghcr.io/danthegoodman1/kubesecretsync:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 50m
+            memory: 100Mi
+          limits:
+            cpu: 50m
+            memory: 100Mi
+        env:
+        - name: DSN
+          valueFrom:
+            secretKeyRef:
+              name: kubesecretsync-dsn
+              key: dsn
+        - name: LEADER
+          value: "0"
+        - name: DEBUG
+          value: "1"
+        - name: PRETTY
+          value: "1"
+        - name: ENCRYPTION_KEY
+          value: "this is an encryption key-------"

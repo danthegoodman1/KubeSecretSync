@@ -53,7 +53,7 @@ func main() {
 }
 
 func startLoop(tickFunc func(ctx context.Context) error, stopChan chan struct{}) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(utils.TICK_SECONDS))
 	defer cancel()
 
 	if os.Getenv("LOCAL") == "1" {

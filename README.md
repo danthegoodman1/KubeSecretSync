@@ -30,6 +30,10 @@ If set to `1`, then this indicates that the node is the leader and should act as
 
 If not set to `1` then it will follow the state of the DB, adding annotations to the secrets based on the last update time from the DB.
 
+### `TICK_SECONDS`
+
+The timeout and interval for the loop. Default `20`. Ensure to raise this if you have lots of secrets, as you want lots of time to ensure secrets are synced before restarting the loop.
+
 ### `DEBUG`
 
 If set to `1`, will print debug logs.
