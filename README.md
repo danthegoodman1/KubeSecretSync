@@ -1,6 +1,8 @@
 # KubeSecretSync
 
 #### Syncing kubernetes secrets across clusters scalably and securely.
+
+Secrets are encrypted before they ever leave the cluster. Even if someone had access to your database, they wouldn't have access to your secrets. See [Security](#security) for more.
 #### Multi-Cloud & Multi-Region
 
 Sync secrets between kubernetes in any region, from any provider.
@@ -74,3 +76,9 @@ You are no longer dependent on a cloud provider, region, or proxy like Cloudflar
 ### Labeling Cert Secrets
 
 Following https://cert-manager.io/docs/usage/certificate/#creating-certificate-resources we can use the `spec.secretTemplate.labels` to add `kube-secret-sync=true` so that the secret will have the correct label when created.
+
+### Security
+
+All secrets are encrypted with AES GCM mode before they ever leave the cluster, and are only decrypted once they are pulled down into the cluster from the DB.
+
+[Relevant Code](https://github.com/danthegoodman1/KubeSecretSync/blob/main/secrets.go#L92-L107)
