@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,7 +10,10 @@ import (
 
 	"github.com/danthegoodman1/KubeSecretSync/db"
 	formattedlogger "github.com/danthegoodman1/KubeSecretSync/formatted_logger"
+	"github.com/danthegoodman1/KubeSecretSync/migrations"
 	"github.com/danthegoodman1/KubeSecretSync/utils"
+
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 var (
@@ -22,6 +26,11 @@ func main() {
 	err := db.ConnectToDB()
 	if err != nil {
 		logger.Fatalf("Error connecting to DB: %s", err)
+	}
+
+	err = migrateUp()
+	if err != nil {
+		logger.Fatal(err)
 	}
 
 	err = initK8sClient()
@@ -47,9 +56,12 @@ func main() {
 	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
 
 	<-exit
-	logger.Info("Got exit signal")
-	stopChan <- struct{}{}
+	logger.Info("Got exit signal, cleaning up")
+	if os.Getenv("LOCAL") != "1" {
+		stopChan <- struct{}{}
+	}
 	db.PGPool.Close()
+	logger.Info("Exiting")
 }
 
 func startLoop(tickFunc func(ctx context.Context) error, stopChan chan struct{}) {
@@ -83,4 +95,21 @@ func startLoop(tickFunc func(ctx context.Context) error, stopChan chan struct{})
 			return
 		}
 	}
+}
+
+func migrateUp() error {
+	logger.Debug("Migrating up")
+	db, err := sql.Open("pgx", utils.DSN)
+	if err != nil {
+		logger.Error("Failed to open DB for migrations")
+		return err
+	}
+	cnt, err := migrations.RunMigrations(db)
+	if err != nil {
+		logger.Error("Error running migrations")
+		return err
+	}
+	logger.Debugf("Applied %d migrations", cnt)
+
+	return nil
 }
