@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/danthegoodman1/KubeSecretSync/db"
@@ -31,18 +33,28 @@ func main() {
 
 	if utils.LEADER {
 		logger.Info("Running as Leader")
-		startLoop(tickLeader, stopChan)
+		go startLoop(tickLeader, stopChan)
 	} else {
 		logger.Info("Running as Follower")
-		startLoop(tickFollower, stopChan)
+		go startLoop(tickFollower, stopChan)
 	}
 	if err != nil {
 		logger.Fatal(err)
 	}
+
+	// Listen for shutdown signal
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
+
+	<-exit
+	logger.Info("Got exit signal")
+	stopChan <- struct{}{}
+	db.PGPool.Close()
 }
 
-func startLoop(tickFunc func(ctx context.Context) error, stopChan chan struct{}) (returnChan chan struct{}) {
+func startLoop(tickFunc func(ctx context.Context) error, stopChan chan struct{}) {
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	if os.Getenv("LOCAL") == "1" {
 		// Just run and exit
@@ -51,8 +63,7 @@ func startLoop(tickFunc func(ctx context.Context) error, stopChan chan struct{})
 		if err != nil {
 			logger.Error(err)
 		}
-		cancel()
-		return make(chan struct{})
+		return
 	}
 
 	ticker := time.NewTicker(time.Second * time.Duration(utils.TICK_SECONDS))
@@ -69,7 +80,6 @@ func startLoop(tickFunc func(ctx context.Context) error, stopChan chan struct{})
 			}
 		case <-stopChan:
 			logger.Info("Received on stop channel, shutting down")
-			cancel()
 			return
 		}
 	}
