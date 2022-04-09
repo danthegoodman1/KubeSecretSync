@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"os"
+	"time"
 
 	"github.com/danthegoodman1/KubeSecretSync/db"
 	"github.com/danthegoodman1/KubeSecretSync/query"
@@ -111,6 +112,7 @@ func tickLeader(ctx context.Context) error {
 
 func upsertSecret(ctx context.Context, secret corev1.Secret, secretHash [32]byte) error {
 	logger.Debugf("Upserting secret %s/%s...", secret.Namespace, secret.Name)
+	s := time.Now()
 	conn, err := db.PGPool.Acquire(ctx)
 	if err != nil {
 		logger.Error("Error acquiring pool connection")
@@ -139,7 +141,7 @@ func upsertSecret(ctx context.Context, secret corev1.Secret, secretHash [32]byte
 		return err
 	}
 
-	logger.Debugf("Upsert secret %s/%s affected %d rows", secret.Namespace, secret.Name, rows)
+	logger.Debugf("Upsert secret %s/%s affected %d rows in %s", secret.Namespace, secret.Name, rows, time.Since(s))
 
 	return nil
 }
