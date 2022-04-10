@@ -31,7 +31,7 @@ This is the DSN of the database, either CockroachDB or Postgres.
 
 ### `ENCRYPTION_KEY`
 
-The key used for encryption and decryption of secrets to and from the DB. Must be the same for leaders and followers.
+The key used for encryption and decryption of secrets to and from the DB. Must be the same for leaders and followers, and must be 32 characters in length.
 
 ### `LEADER`
 
